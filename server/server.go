@@ -11,7 +11,12 @@ type Msg struct {
 	txt string
 }
 
-var ClientList map[int]net.Conn = make(map[int]net.Conn)
+type Client struct {
+	nickname string
+	conn     net.Conn
+}
+
+var ClientList map[int]Client = make(map[int]Client)
 var msgCh chan Msg = make(chan Msg, 100)
 
 func main() {
@@ -45,9 +50,9 @@ func OnServerEnd() {
 
 func SendAll(msg string) {
 	for id, client := range ClientList {
-		_, err := client.Write([]byte(msg))
+		_, err := client.conn.Write([]byte(msg))
 		if err != nil {
-			fmt.Printf("[Server] Client %v connection lost\n", id)
+			fmt.Printf("[Server] %s connection lost\n", client.nickname)
 			defer OnClientDisconneted(id)
 		}
 	}
@@ -55,7 +60,7 @@ func SendAll(msg string) {
 
 func OnClientConnect(conn net.Conn, id int) {
 	defer conn.Close()
-	ClientList[id] = conn
+	ClientList[id] = Client{fmt.Sprintf("Client %v", id), conn}
 	fmt.Printf("[Server] Client %v is connected\n", id)
 	SendAll(fmt.Sprintf("[Global] Client %v is connected\n", id))
 	readBuf := make([]byte, 4092)
