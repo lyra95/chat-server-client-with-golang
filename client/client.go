@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"strings"
 	//"time"
 )
 
@@ -42,6 +43,7 @@ func ChatBoard(conn net.Conn) {
 		}
 		msg := string(readBuf[:n])
 		if len(msg) > 0 {
+			msg = strings.TrimRight(msg, "\r\n")
 			log.Println(msg)
 		}
 	}

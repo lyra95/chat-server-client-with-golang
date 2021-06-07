@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net"
+	"strings"
 )
 
 type Msg struct {
@@ -14,7 +15,7 @@ var ClientList map[int]net.Conn = make(map[int]net.Conn)
 var msgCh chan Msg = make(chan Msg, 100)
 
 func main() {
-	ln := StartServer("121.147.20.91:1000")
+	ln := StartServer(":1000")
 	defer ln.Close()
 
 	go ChatBoard()
@@ -59,15 +60,19 @@ func OnClientConnect(conn net.Conn, id int) {
 	SendAll(fmt.Sprintf("[Global] Client %v is connected\n", id))
 	readBuf := make([]byte, 4092)
 	var msg string
-	for msg != "!exit" {
+	for {
 		n, err := conn.Read(readBuf)
 		if err != nil {
 			fmt.Printf("[Server] Client %v connection lost\n", id)
 			OnClientDisconneted(id)
 			break
 		}
-		msg := string(readBuf[:n])
+		msg = string(readBuf[:n])
 		if len(msg) > 0 {
+			msg = strings.TrimRight(msg, "\r\n")
+			if msg == "!exit" {
+				break
+			}
 			fmt.Printf("[Client %v] %s\n", id, msg)
 			msgCh <- Msg{id, msg}
 		}
